@@ -25,20 +25,13 @@ from src.lib import content_exceptions
 
 class IotgTestPnp(IotgBaseTestCase):
 
-    #CMD_DOWNLOAD_PNP_REPO = r'git clone https://lab_labtestuser:qk9_xB2k9PZHmmYVZhDQ@gitlab.devtools.intel.com/benchmark/pnpwls'
-    CMD_DOWNLOAD_PNP_REPO = r'export https_proxy=http://proxy-dmz.intel.com:912; git clone https://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@github.com/intel-innersource/applications.validation.platforms.power-and-performance.server.base-workloads.git'
-    PNP_WORKLOADS = r'applications.validation.platforms.power-and-performance.server.base-workloads'
-
     CMD_DOWNLOAD_XMLCLI_TOOL = r'wget -c -t 5 --no-check-certificate https://ubit-artifactory-ba.intel.com/artifactory/star_framework-ba-local/dtaf/xmlcli/6.6_xmlcli_windows_linux_Python2\&3.zip'
 
-    CMD_NEX_MLC_SHELL = r'export https_proxy=http://proxy-dmz.intel.com:912; git clone https://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@github.com/intel-sandbox/SPR-R-EEC-SWS-PnP.git; ' \
-                        r'cd SPR-R-EEC-SWS-PnP; git checkout Automation;chmod 777 *xlsx; chmod 755 mlc/run*; dos2unix mlc/run*;' \
-                        r' echo y |cp -rf mlc/run* /root/applications.validation.platforms.power-and-performance.server.base-workloads/mlc/'
-
-    CMD_NEX_PCIE_SHELL = r'export https_proxy=http://proxy-dmz.intel.com:912;'
+    CMD_NEX_PCIE_SHELL = r'export https_proxy=http://proxy-dmz.intel.com:912; git clone https://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@github.com/xiaoyang-sean/SPR-R-EEC-SWS-PnP_pcie.git; ' \
+                         r'cd SPR-R-EEC-SWS-PnP_pcie; chmod 777 *xlsx'
 
     XLSX_FILE = r'SPR-EEC-PnP-NEX-pcie.xlsx'
-    SWS_PnP_PATH = r'/root/SPR-R-EEC-SWS-PnP'
+    SWS_PnP_PATH = r'/root/SPR-R-EEC-SWS-PnP_pcie'
     NEX_REPORT_TEMPLATE = r'{}/{}'.format(SWS_PnP_PATH, XLSX_FILE)
     XLSX_REPORT_FILE = r'C:\Automation\dtaf_content\src\iotg_tests\pnp\{}'.format(XLSX_FILE)
 
@@ -46,7 +39,7 @@ class IotgTestPnp(IotgBaseTestCase):
 
     KPI_RESULT_CSV_FILE = r'C:\pnp_log\kpi_result.csv'
 
-    KPI_LABEL = r'Base_PnP'
+    KPI_LABEL = r'PCIe_PnP'
     TARGET_FLAG = 0
 
     REBOOT_TIMEOUT = 600
@@ -313,14 +306,14 @@ class IotgTestPnp(IotgBaseTestCase):
                 self.openpyxl_swap_col_value(self.XLSX_REPORT_FILE, 4, 6, XLSX_SHEET_NAME)
                 self.openpyxl_swap_col_value(self.XLSX_REPORT_FILE, 5, 7, XLSX_SHEET_NAME)
                 self._log.info(f'openpyxl_swap_col_value once !!!')
-                # self.os.execute(r'sudo rm -rf excel_write_flag', 30)
-                # self._log.info(f'execute cmd: sudo rm -rf excel_write_flag once !!!')
+                self.os.execute(r'sudo rm -rf excel_write_flag', 30)
+                self._log.info(f'execute cmd: sudo rm -rf excel_write_flag once !!!')
                 self.openpyxl_set_col_default_value(self.XLSX_REPORT_FILE, 4, 'NA', XLSX_SHEET_NAME)
                 self.openpyxl_set_col_default_value(self.XLSX_REPORT_FILE, 5, 'NA', XLSX_SHEET_NAME)
                 self._log.info(f'openpyxl_set_col_default_value once !!!')
 
-                self.os.execute(r'sudo touch excel_write_flag', 30)
-                self._log.info("touch excel_write_flag successfully!")
+                # self.os.execute(r'sudo touch excel_write_flag', 30)
+                # self._log.info("touch excel_write_flag successfully!")
 
             # get target value
             Target_value = self.xlsx_get_target(casename, baseaddress, XLSX_SHEET_NAME)
@@ -518,15 +511,22 @@ class IotgTestPnp(IotgBaseTestCase):
             self.os.execute("cd /opt/APP/; unzip *xmlcli*.zip; mv *xmlcli*/xmlcli ./", 1800)
             self._log.info("Download the xmlcli tool and unzip successfully")
 
+        if self.os.check_if_path_exists(self.SWS_PnP_PATH, True):
+            self._log.info("{} exist, not need to clone report file!")
+            return True
 
+        check = self.os.execute(f"{self.CMD_NEX_PCIE_SHELL}", 1200)
+        self._log.info(check.stdout)
 
-        # if not self.os.check_if_path_exists(f"{self.NEX_REPORT_TEMPLATE}", False):
-        #     self._log.error("{} not exist!".format(self.NEX_REPORT_TEMPLATE))
-        #     return False
-        #
-        # self.os.copy_file_from_sut_to_local(self.NEX_REPORT_TEMPLATE, self.XLSX_REPORT_FILE)
-        # self._log.info('succeed to copy report file from sut to NUC.')
-        
+        if not self.os.check_if_path_exists(f"{self.NEX_REPORT_TEMPLATE}", False):
+            self._log.error("{} not exist!".format(self.NEX_REPORT_TEMPLATE))
+            return False
+
+        self.os.copy_file_from_sut_to_local(self.NEX_REPORT_TEMPLATE, self.XLSX_REPORT_FILE)
+        self._log.info('succeed to copy report file from sut to NUC.')
+
+        self.os.execute(r'sudo touch excel_write_flag', 30)
+        self._log.info("touch excel_write_flag successfully!")
         return True
 
     def execute(self):
