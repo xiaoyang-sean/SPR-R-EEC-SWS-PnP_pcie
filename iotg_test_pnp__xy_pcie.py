@@ -302,7 +302,7 @@ class IotgTestPnp(IotgBaseTestCase):
             XLSX_SHEET_NAME = r'PCIE (CentOS) 1S' if socket_num == 1 else r'PCIE (CentOS) 2S'
             #excel_write_flag
             excel_flag = f'excel_write_flag'
-            if not self.os.check_if_path_exists(excel_flag):
+            if self.os.check_if_path_exists(excel_flag):
                 self.openpyxl_swap_col_value(self.XLSX_REPORT_FILE, 4, 6, XLSX_SHEET_NAME)
                 self.openpyxl_swap_col_value(self.XLSX_REPORT_FILE, 5, 7, XLSX_SHEET_NAME)
                 self._log.info(f'openpyxl_swap_col_value once !!!')
